@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Socket.IO chat</title>
+        <link rel="stylesheet" href="/css/style.css">
+    </head>
+    <body>
+        <div class="chat-container">
+            <div class="chat-header">
+                <h1>チャットデモ</h1>
+                <button id="logoutBtn" class="logout-btn">ログアウト</button>
+            </div>
+
+            <ul id="show-message"></ul>
+
+            <form id="form">
+                <input id="message" placeholder="message" autocomplete="off">
+                <button type="submit">送信</button>
+            </form>
+        </div>
+
+        <!-- クライアント用のライブラリを読み込んでインスタンス化します。 -->
+        <script src="/socket.io/socket.io.js"></script>
+        
+        <script src="/js/chat.js"></script>
+
+        <script>window.LOGIN_USER = "admin";</script>
+    </body>
+</html>
