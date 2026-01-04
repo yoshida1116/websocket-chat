@@ -16,7 +16,7 @@ http://localhost:3000/
 ## 仕様
 
 1.タブを開きユーザー名、パスワ－ドを入力<br>
-(ユーザー名はadmin,user1,user2,user3固定)<br>
+(ユーザー名は"admin","user1","user2","user3"固定)<br>
 (パスワードは"password123"固定)<br>
 <br>
 2.タブを複製し、別のユーザー名、パスワードを入力<br>
