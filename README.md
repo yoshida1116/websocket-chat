@@ -8,10 +8,10 @@ Socket.IO を使った簡易チャットアプリ。
 Ratchetを入れる
 composer require cboden/ratchet
 
-プロジェクトフォルダで
+ターミナル　プロジェクトフォルダで
 php Websocket/server.php
 
-別のプロジェクトフォルダで
+ターミナル　別のプロジェクトフォルダで
 php -S localhost:3000 -t public
 ```
 
