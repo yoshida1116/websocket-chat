@@ -5,13 +5,19 @@ Socket.IO を使った簡易チャットアプリ。
 ## 起動方法
 
 ```bash
-npm install
-npm start
+Ratchetを入れる
+composer require cboden/ratchet
+
+プロジェクトフォルダで <br>
+php Websocket/server.php
+
+別のプロジェクトフォルダで　<br>
+php -S localhost:3000 -t public
 ```
 
 ## URL
 
-http://localhost:3000/
+http://localhost:3000/login.php
 
 ## 仕様
 
