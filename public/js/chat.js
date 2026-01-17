@@ -1,103 +1,144 @@
-const form = document.getElementById("form");
-const message = document.getElementById("message");
-const showMessages = document.getElementById("show-message");
+(() => {
+    "use strict";
 
-const socket = io();
+    // ===== 設定 =====
+    const WS_URL = "ws://127.0.0.1:8080";
+    const messageList = document.getElementById("show-message");
+    const form = document.getElementById("form");
+    const input = document.getElementById("message");
 
-let currentUser = null;
+    // PHP から注入される前提
+    const CURRENT_USER_ID = window.USER_ID;
 
-async function loadMe() {
-  const res = await fetch("/api/me");
-  if (!res.ok) {
-    location.href = "/login.html";
-    return;
-  }
-  const me = await res.json();
-  currentUser = me.user;
-}
+    let ws;
+    const renderedMessageIds = new Set();
 
-function renderMessage(data) {
-  const row = document.createElement("div");
-  const content = document.createElement("div");
-  const nameEl = document.createElement("div");
-  const bubble = document.createElement("div");
-  const time = document.createElement("div");
+    // ===== WebSocket 接続 =====
+    function connect() {
+        ws = new WebSocket(WS_URL);
 
-  const isSelf = currentUser && data.name === currentUser;
+        ws.onopen = () => {
+            console.log("WebSocket connected");
+        };
 
-  row.classList.add("message-row", isSelf ? "self" : "other");
-  content.style.display = "flex";
-  content.style.flexDirection = "column";
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            appendMessage(data);
+        };
 
-  nameEl.classList.add("name");
-  nameEl.textContent = data.name;
+        ws.onclose = () => {
+            console.log("WebSocket closed. retry...");
+            setTimeout(connect, 3000);
+        };
 
-  bubble.classList.add("bubble");
-  bubble.textContent = data.msg;
+        ws.onerror = () => {
+            ws.close();
+        };
+    }
 
-  const date = new Date(data.time);
-  time.classList.add("time");
-  time.textContent = date.toLocaleTimeString("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+    // ===== メッセージ送信 =====
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
 
-  content.appendChild(nameEl);
-  content.appendChild(bubble);
 
-  if (isSelf) {
-    row.appendChild(time);
-    row.appendChild(content);
-  } else {
-    row.appendChild(content);
-    row.appendChild(time);
-  }
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.warn("WebSocket not connected");
+            return;
+        }
 
-  showMessages.appendChild(row);
-  showMessages.scrollTop = showMessages.scrollHeight;
-}
+        const text = input.value.trim();
+        if (text === "") {
+            return;
+        }
 
-async function loadHistory() {
-  const res = await fetch("/api/messages");
-  if (!res.ok) return;
+        const payload = {
+            user_id: CURRENT_USER_ID,
+            message: text,
+            sent_at: formatDateTime(new Date())
+        };
 
-  const messages = await res.json();
-  messages.forEach((m) => {
-    renderMessage({
-      name: m.user,
-      msg: m.message,
-      time: m.created_at,
+        ws.send(JSON.stringify(payload));
+        input.value = "";
     });
-  });
-}
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
+    function appendMessage(msg) {
+        if (msg.id && renderedMessageIds.has(msg.id)) {
+            return;
+        }
+        if (msg.id) {
+            renderedMessageIds.add(msg.id);
+        }
 
-  const msg = message.value;
-  if (!msg.trim()) return;
+        const isSelf = msg.user_id === CURRENT_USER_ID;
 
-  socket.emit("msgPost", { msg });
-  message.value = "";
-});
+        const li = document.createElement("li");
+        li.className = `message-row ${isSelf ? "self" : "other"}`;
 
-socket.on("msgGet", (data) => {
-  renderMessage(data);
-});
+        const body = document.createElement("div");
 
-(async () => {
-  await loadMe();
-  await loadHistory();
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = msg.username;
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = msg.message;
+
+        body.appendChild(name);
+        body.appendChild(bubble);
+
+        const time = createTime(msg.sent_at);
+
+        if (isSelf) {
+            li.appendChild(time);
+            li.appendChild(body);
+        } else {
+            li.appendChild(body);
+            li.appendChild(time);
+        }
+
+        messageList.appendChild(li);
+        scrollBottom();
+    }
+
+    // ===== 時刻表示 =====
+    function createTime(datetime) {
+        const div = document.createElement("div");
+        div.className = "time";
+
+        const d = new Date(datetime.replace(" ", "T"));
+        div.textContent = d.toLocaleTimeString("ja-JP", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        return div;
+    }
+
+    // ===== ユーティリティ =====
+    function scrollBottom() {
+        messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    function formatDateTime(date) {
+        const pad = (n) => String(n).padStart(2, "0");
+        return (
+            date.getFullYear() + "-" +
+            pad(date.getMonth() + 1) + "-" +
+            pad(date.getDate()) + " " +
+            pad(date.getHours()) + ":" +
+            pad(date.getMinutes()) + ":" +
+            pad(date.getSeconds())
+        );
+    }
+
+    async function loadInitialMessages() {
+    const res = await fetch('/api/messages.php');
+    const messages = await res.json();
+    messages.forEach(appendMessage);
+    }
+
+    // ===== 初期化 =====
+    loadInitialMessages();
+    connect();
 })();
-
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon("/logout");
-});
-
-// ログアウト処理
-const logoutBtn = document.getElementById("logoutBtn");
-
-logoutBtn.addEventListener("click", async () => {
-  await fetch("/logout", { method: "POST" });
-  location.href = "/login.html";
-});

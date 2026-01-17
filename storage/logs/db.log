@@ -1,0 +1,1 @@
+[DB ERROR] SQLSTATE[HY000] [2002] 対象のコンピューターによって拒否されたため、接続できませんでした。[DB ERROR] SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: NO)
