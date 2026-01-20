@@ -3,19 +3,38 @@ declare(strict_types=1);
 
 /**
  * User モデル
- * users テーブル専用
+ *
+ * users テーブルに対する参照処理を担当するモデルクラス。
+ * 認証処理およびユーザー情報取得用途で利用される。
  */
 class User
 {
+    /**
+     * DB 接続用 PDO インスタンス
+     *
+     * @var PDO
+     */
     private PDO $pdo;
 
+    /**
+     * コンストラクタ
+     *
+     * @param PDO $pdo データベース接続インスタンス
+     */
     public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
     }
 
     /**
-     * ID からユーザー取得
+     * ID を指定してユーザーを取得する
+     *
+     * 主キー（id）を条件に users テーブルから
+     * ユーザー情報を 1 件取得する。
+     *
+     * @param int $id ユーザーID（主キー）
+     *
+     * @return array<string, mixed>|null
      */
     public function findById(int $id): ?array
     {
@@ -35,11 +54,19 @@ class User
         ]);
 
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return $user !== false ? $user : null;
     }
 
     /**
-     * user_id から取得（ログイン用）
+     * user_id を指定してユーザーを取得する（ログイン用）
+     *
+     * ログイン認証処理において使用される。
+     * password カラムを含めて取得する。
+     *
+     * @param string $userId ユーザーID（ログインID）
+     *
+     * @return array<string, mixed>|null
      */
     public function findByUserId(string $userId): ?array
     {
@@ -60,6 +87,7 @@ class User
         ]);
 
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
         return $user !== false ? $user : null;
     }
 }
