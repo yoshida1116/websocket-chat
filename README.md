@@ -1,6 +1,6 @@
 # WebSocket Chat
 
-Socket.IO を使った簡易チャットアプリ。
+WebSocketを使った簡易チャットアプリ。
 
 ## 起動方法
 
