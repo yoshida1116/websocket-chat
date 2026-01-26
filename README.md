@@ -5,24 +5,19 @@ Socket.IO を使った簡易チャットアプリ。
 ## 起動方法
 
 ```bash
-Ratchetを入れる
-composer require cboden/ratchet
-
-ターミナル　プロジェクトフォルダで
-php Websocket/server.php
-
-ターミナル　別のプロジェクトフォルダで
-php -S localhost:3000 -t public
+ターミナルで
+docker-compose up -d
 ```
 
 ## URL
 
-http://localhost:3000/login.php
+http://localhost/login
 
 ## 仕様
 
-1.タブを開きユーザー名を入力<br>
-2.タブを複製し、別のユーザー名を入力<br>
-3.メッセージを入力し、送信<br>
+1.ログイン画面でユーザー名、パスワードを登録。（２個以上登録を推奨）<br>
+2.登録後ユーザー名パスワ－ドを入力しログイン<br>
+3.タブを複製し、別のユーザー情報を入力しログイン<br>
+4.それぞれのタブ（アカウント）でメッセージを入力し、送信<br>
 
 ・送信したメッセージ、受信したメッセージ、それぞれの時刻が表示される<br>
