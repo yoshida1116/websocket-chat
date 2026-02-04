@@ -17,6 +17,21 @@
 
     <h2>新規ユーザー登録</h2>
 
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div style="color:red;">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     <form id="registerForm" method="POST" action="{{ url('/register') }}">
         @csrf
         <input id="registerUserId" name="userId" placeholder="新規ユーザーID">
@@ -24,6 +39,5 @@
         <button type="submit">登録</button>
     </form>
 
-    <script type="module" src="/js/login.js"></script>
 </body>
 </html>

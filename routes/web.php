@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\RegisterController;
-use App\Http\Controllers\MessageController;
 
 Route::get('/css/style.css', function () {
     $path = resource_path('css/style.css');
@@ -80,9 +79,3 @@ Route::get('/', function () {
     }
     return view('index');
 });
-
-// メッセージ取得
-Route::get('/messages', [MessageController::class, 'index']);
-
-// メッセージ保存
-Route::post('/messages', [MessageController::class, 'store']);

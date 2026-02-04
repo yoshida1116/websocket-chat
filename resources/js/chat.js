@@ -8,7 +8,7 @@
     const input = document.getElementById("message");
 
     // PHP から注入される前提
-    const CURRENT_USER_ID = window.USER_ID;
+    const CURRENT_USER_ID = String(window.USER_ID);
     const CURRENT_USER_NAME = window.USER_NAME;
 
     let ws;
@@ -62,10 +62,23 @@
 
     // ===== メッセージ表示 =====
     function appendMessage(msg) {
+
+        if (
+            !msg ||
+            typeof msg.message !== "string" ||
+            msg.message.trim() === "" ||
+            !msg.user_id ||
+            !msg.sent_at
+        ) {
+            return;
+        }
+
         if (msg.id && renderedMessageIds.has(msg.id)) return;
         if (msg.id) renderedMessageIds.add(msg.id);
 
-        const isSelf = msg.user_id === CURRENT_USER_ID;
+        const isSelf = String(msg.user_id) === CURRENT_USER_ID;
+
+        const displayName = msg.username ?? msg.user_id;
 
         const li = document.createElement("li");
         li.className = `message-row ${isSelf ? "self" : "other"}`;
@@ -74,7 +87,7 @@
 
         const name = document.createElement("div");
         name.className = "name";
-        name.textContent = msg.username;
+        name.textContent = displayName;
 
         const bubble = document.createElement("div");
         bubble.className = "bubble";
@@ -128,13 +141,9 @@
 
     // ===== 初期化 =====
     async function loadInitialMessages() {
-        try {
-            const res = await fetch('/messages'); // Laravel MVC 既存 Controller で JSON を返す
-            const messages = await res.json();
-            messages.forEach(appendMessage);
-        } catch (err) {
-            console.error("Failed to load initial messages:", err);
-        }
+        const res = await fetch('/api/messages');
+        const messages = await res.json();
+        messages.forEach(appendMessage);
     }
 
     loadInitialMessages();

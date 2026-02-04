@@ -12,31 +12,24 @@ use Illuminate\Http\RedirectResponse;
 
 final class RegisterController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request): RedirectResponse
     {
-        $request->validate([
-            'userId'   => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8'],
-        ]);
+        $request->validate(
+            [
+                'userId'   => ['required', 'string', 'max:255', 'unique:users,user_id'],
+                'password' => ['required', 'string', 'min:8'],
+            ],
+            [
+                'userId.unique' => 'そのユーザーIDは既に存在します',
+            ]
+        );
 
-        $exists = User::query()
-            ->where('user_id', $request->input('userId'))
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'message' => 'そのユーザーIDは既に存在します'
-            ], 409);
-        }
-
-        User::query()->create([
+        User::create([
             'user_id'  => $request->input('userId'),
             'password' => Hash::make($request->input('password')),
         ]);
 
-        // 成功メッセージ
-        Session::flash('success', '登録完了。ログインしてください。');
-
-        return redirect('/login');
+        return redirect('/login')
+            ->with('success', '登録完了。ログインしてください。');
     }
 }

@@ -50,8 +50,7 @@ final class LoginController extends Controller
         $csrfToken = Str::random(64);
         session(['csrf_token' => $csrfToken]);
 
-        return response()->json([
-            'csrfToken' => $csrfToken,
-        ]);
+        return redirect('/')
+            ->with('success', 'ログインしました');
     }
 }

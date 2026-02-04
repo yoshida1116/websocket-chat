@@ -24,43 +24,46 @@ final class MessageController extends Controller
         $limit = (int) $request->query('limit', 50);
 
         $messages = Message::query()
-            ->with('user:id,user_id')
-            ->orderByDesc('id')
+            ->select(
+                'messages.id',
+                'messages.user_id',
+                'users.user_id as username',
+                'messages.message',
+                'messages.sent_at',
+                'messages.received_at'
+            )
+            ->join('users', 'users.id', '=', 'messages.user_id')
+            ->orderByDesc('messages.id')
             ->limit($limit)
             ->get()
             ->reverse()
-            ->values()
-            ->map(function ($message) {
-                return [
-                    'id'          => $message->id,
-                    'user_id'     => $message->user_id,
-                    'username'    => $message->user->user_id,
-                    'message'     => $message->message,
-                    'sent_at'     => $message->sent_at,
-                    'received_at' => $message->received_at,
-                ];
-            });
+            ->values();
 
         return response()->json($messages);
     }
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'user_id'     => 'required|integer',
-            'username'    => 'required|string',
+        $validated = $request->validate([
+            'user_id'     => 'required|string',
             'message'     => 'required|string',
-            'sent_at'     => 'required|date',
-            'received_at' => 'nullable|date',
+            'sent_at'     => 'required|string',
+            'received_at' => 'nullable|string',
         ]);
 
         $msg = Message::create([
-            'user_id'     => $request->user_id,
-            'message'     => $request->message,
-            'sent_at'     => $request->sent_at,
-            'received_at' => $request->received_at ?? now(),
+            'user_id'     => $validated['user_id'],
+            'message'     => $validated['message'],
+            'sent_at'     => $validated['sent_at'],
+            'received_at' => $validated['received_at'] ?? now()->format('Y-m-d H:i:s'),
         ]);
 
-        return response()->json($msg);
+        return response()->json([
+            'id' => $msg->id,
+            'user_id' => $msg->user_id,
+            'message' => $msg->message,
+            'sent_at' => $msg->sent_at,
+            'received_at' => $msg->received_at,
+        ]);
     }
 }
