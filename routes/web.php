@@ -6,76 +6,71 @@ use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\MessageController;
 
+/*
+|--------------------------------------------------------------------------
+| 認証チェック用ミドルウェア
+|--------------------------------------------------------------------------
+*/
+$authCheck = function ($request, $next) {
+    if (!session()->has('user_id')) {
+        return redirect('/login');
+    }
+    return $next($request);
+};
+
+/*
+|--------------------------------------------------------------------------
+| 静的ファイル
+|--------------------------------------------------------------------------
+*/
 Route::get('/css/style.css', function () {
     $path = resource_path('css/style.css');
-
-    if (!File::exists($path)) {
-        abort(404);
-    }
+    abort_unless(File::exists($path), 404);
 
     return Response::make(File::get($path), 200, [
         'Content-Type' => 'text/css',
     ]);
 });
 
-// ログイン画面
+Route::get('/js/{file}', function ($file) {
+    $allowed = ['login.js', 'chat.js', 'logout.js'];
+    abort_unless(in_array($file, $allowed, true), 404);
+
+    $path = resource_path("js/{$file}");
+    abort_unless(File::exists($path), 404);
+
+    return Response::make(File::get($path), 200, [
+        'Content-Type' => 'application/javascript',
+    ]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| 認証不要ルート
+|--------------------------------------------------------------------------
+*/
 Route::get('/login', function () {
     return view('login');
 });
 
-// ログアウト
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/register', [RegisterController::class, 'register']);
 Route::get('/logout', [LogoutController::class, 'logout']);
 
-// JS
-Route::get('/js/login.js', function () {
-    $path = resource_path('js/login.js');
+/*
+|--------------------------------------------------------------------------
+| 認証必須ルート
+|--------------------------------------------------------------------------
+*/
+Route::middleware('session.auth')->group(function () {
 
-    if (!File::exists($path)) {
-        abort(404);
-    }
+    // トップ画面
+    Route::get('/', function () {
+        return view('index');
+    });
 
-    return Response::make(File::get($path), 200, [
-        'Content-Type' => 'application/javascript',
-    ]);
-});
-
-// chat.js
-Route::get('/js/chat.js', function () {
-    $path = resource_path('js/chat.js');
-
-    if (!File::exists($path)) {
-        abort(404);
-    }
-
-    return Response::make(File::get($path), 200, [
-        'Content-Type' => 'application/javascript',
-    ]);
-});
-
-// logout.js
-Route::get('/js/logout.js', function () {
-    $path = resource_path('js/logout.js');
-
-    if (!File::exists($path)) {
-        abort(404);
-    }
-
-    return Response::make(File::get($path), 200, [
-        'Content-Type' => 'application/javascript',
-    ]);
-});
-
-// ログイン処理
-Route::post('/login', [LoginController::class, 'login']);
-
-// 登録処理
-Route::post('/register', [RegisterController::class, 'register']);
-
-// index
-Route::get('/', function () {
-    if (!session()->has('user_id')) {
-        return redirect('/login');
-    }
-    return view('index');
+    // メッセージAPI
+    Route::get('/api/messages', [MessageController::class, 'index']);
 });

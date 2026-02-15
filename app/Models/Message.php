@@ -17,6 +17,12 @@ class Message extends Model
 
     public $timestamps = false;
 
+    // Userとのリレーションを定義
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
     /**
      * 最新メッセージ取得
      */
@@ -25,8 +31,7 @@ class Message extends Model
         return self::query()
             ->select(
                 'messages.id',
-                'messages.user_id',
-                'users.user_id as username',
+                'users.user_id as user_id',
                 'messages.message',
                 'messages.sent_at',
                 'messages.received_at'
@@ -48,8 +53,7 @@ class Message extends Model
         return self::query()
             ->select(
                 'messages.id',
-                'messages.user_id',
-                'users.user_id as username',
+                'users.user_id as user_id',
                 'messages.message',
                 'messages.sent_at',
                 'messages.received_at'

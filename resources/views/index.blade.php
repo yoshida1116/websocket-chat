@@ -21,10 +21,10 @@
     </form>
   </div>
 
-  <script>
-    window.USER_ID = {{ session('user_id', 0) }};
-    window.USER_NAME = "{{ session('user_name', 'Guest') }}";
-  </script>
+    <script>
+        window.USER_ID = "{{ session('user_name') }}";
+        window.USER_NAME = "{{ session('user_name') }}";
+    </script>
   <script src="/js/chat.js"></script>
   <script src="/js/logout.js"></script>
 

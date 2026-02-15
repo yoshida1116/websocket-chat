@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,13 +22,13 @@ final class MessageController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $limit = (int) $request->query('limit', 50);
+        $limit = min((int) $request->query('limit', 50), 100);
 
         $messages = Message::query()
             ->select(
                 'messages.id',
                 'messages.user_id',
-                'users.user_id as username',
+                'users.user_id as user_id',
                 'messages.message',
                 'messages.sent_at',
                 'messages.received_at'
@@ -45,25 +46,40 @@ final class MessageController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'user_id'     => 'required|string',
-            'message'     => 'required|string',
-            'sent_at'     => 'required|string',
-            'received_at' => 'nullable|string',
+            'user_id'     => ['required', 'string'],
+            'message'     => ['required', 'string', 'max:1000'],
+            'sent_at'     => ['required', 'date'],
+            'received_at' => ['nullable', 'date'],
         ]);
 
-        $msg = Message::create([
-            'user_id'     => $validated['user_id'],
-            'message'     => $validated['message'],
-            'sent_at'     => $validated['sent_at'],
-            'received_at' => $validated['received_at'] ?? now()->format('Y-m-d H:i:s'),
-        ]);
+        // 文字列IDからユーザー取得
+        $user = User::where('user_id', $validated['user_id'])->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'ユーザーが存在しません。',
+            ], 400);
+        }
+
+        try {
+            $msg = Message::create([
+                'user_id'     => $user->id,
+                'message'     => $validated['message'],
+                'sent_at'     => $validated['sent_at'],
+                'received_at' => $validated['received_at'] ?? now(),
+            ]);
+        } catch (\Throwable) {
+            return response()->json([
+                'message' => '送信に失敗しました。',
+            ], 500);
+        }
 
         return response()->json([
-            'id' => $msg->id,
-            'user_id' => $msg->user_id,
-            'message' => $msg->message,
-            'sent_at' => $msg->sent_at,
+            'id'          => $msg->id,
+            'user_id'     => $user->user_id,
+            'message'     => $msg->message,
+            'sent_at'     => $msg->sent_at,
             'received_at' => $msg->received_at,
-        ]);
+        ], 201);
     }
 }

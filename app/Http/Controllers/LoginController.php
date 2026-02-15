@@ -32,12 +32,12 @@ final class LoginController extends Controller
             ->where('user_id', $request->input('userId'))
             ->first();
 
-        if ($user === null) {
-            return response()->json([], Response::HTTP_UNAUTHORIZED);
-        }
-
-        if (!Hash::check($request->input('password'), $user->password)) {
-            return response()->json([], Response::HTTP_UNAUTHORIZED);
+        if (!$user || !Hash::check($request->input('password'), $user->password)) {
+            return back()
+                ->withErrors([
+                    'userId' => 'ユーザーIDまたはパスワードが正しくありません。',
+                ])
+                ->withInput();
         }
 
         // セッション保存
@@ -45,10 +45,6 @@ final class LoginController extends Controller
             'user_id'   => $user->id,
             'user_name' => $user->user_id,
         ]);
-
-        // CSRF トークン生成
-        $csrfToken = Str::random(64);
-        session(['csrf_token' => $csrfToken]);
 
         return redirect('/')
             ->with('success', 'ログインしました');

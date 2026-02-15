@@ -24,6 +24,12 @@
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
             appendMessage(data);
         };
 

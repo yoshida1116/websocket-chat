@@ -6,7 +6,7 @@ const wss = new WebSocket.Server({ port: 8080 });
 const clients = new Set();
 
 // Laravel API にメッセージを保存する関数
-const save = (data) => {
+const save = (data, ws) => {
     const body = JSON.stringify(data);
 
     const options = {
@@ -22,18 +22,36 @@ const save = (data) => {
 
     const req = http.request(options, res => {
         let resBody = '';
+
         res.on('data', chunk => { resBody += chunk; });
+
         res.on('end', () => {
-            console.log(`POST status: ${res.statusCode}`, resBody);
+
+            console.log('STATUS:', res.statusCode);
+            console.log('RESPONSE:', resBody);
+
+            if (res.statusCode >= 400) {
+                ws.send(resBody);   // ← Laravelのエラーをそのまま返す
+                return;
+            }
+
+            // 成功時のみ配信
+            clients.forEach(c => {
+                if (c.readyState === WebSocket.OPEN) {
+                    c.send(resBody);
+                }
+            });
         });
     });
 
-    req.on('error', err => {
-        console.error('HTTP POST error:', err.message);
+    req.on('error', () => {
+        ws.send(JSON.stringify({
+            error: "送信に失敗しました。"
+        }));
     });
 
-    req.write(body); // 本文を送信
-    req.end();       // リクエスト終了
+    req.write(body);
+    req.end();
 };
 
 // WebSocket 接続時の処理
@@ -44,21 +62,18 @@ wss.on('connection', ws => {
         try {
             const msg = JSON.parse(m);
 
-            // 接続中の全クライアントにメッセージを配信
-            clients.forEach(c => {
-                if (c.readyState === WebSocket.OPEN) c.send(m);
-            });
-
             // Laravel API に保存
             save({
-                user_id: String(msg.user_id),
+                user_id: msg.user_id,
                 message: msg.message,
                 sent_at: msg.sent_at,
                 received_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
-            });
+            }, ws);
 
-        } catch (err) {
-            console.error('Failed to process message:', err);
+        } catch {
+            ws.send(JSON.stringify({
+                error: "送信に失敗しました。"
+            }));
         }
     });
 
