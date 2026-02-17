@@ -45,6 +45,7 @@ final class MessageController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        try {
         $validated = $request->validate([
             'user_id'     => ['required', 'string'],
             'message'     => ['required', 'string', 'max:1000'],
@@ -57,22 +58,16 @@ final class MessageController extends Controller
 
         if (!$user) {
             return response()->json([
-                'message' => 'ユーザーが存在しません。',
+                'error' => 'ユーザーが存在しません。',
             ], 400);
         }
 
-        try {
             $msg = Message::create([
                 'user_id'     => $user->id,
                 'message'     => $validated['message'],
                 'sent_at'     => $validated['sent_at'],
                 'received_at' => $validated['received_at'] ?? now(),
             ]);
-        } catch (\Throwable) {
-            return response()->json([
-                'message' => '送信に失敗しました。',
-            ], 500);
-        }
 
         return response()->json([
             'id'          => $msg->id,
@@ -81,5 +76,12 @@ final class MessageController extends Controller
             'sent_at'     => $msg->sent_at,
             'received_at' => $msg->received_at,
         ], 201);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'error' => '送信に失敗しました。',
+            ], 500);
+        }
     }
 }
