@@ -135,3 +135,13 @@ button:active {
 .logout-btn:hover {
     opacity: 0.85;
 }
+
+.message-row.system {
+    justify-content: center;
+}
+
+.bubble.error {
+    background-color: #ffe5e5;
+    color: #c00;
+    font-weight: bold;
+}

@@ -23,10 +23,17 @@
         };
 
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+            let data;
+
+            try {
+                data = JSON.parse(event.data);
+            } catch (e) {
+                appendErrorMessage("サーバー応答の解析に失敗しました。");
+                return;
+            }
 
             if (data.error) {
-                alert(data.error);
+                appendErrorMessage(data.error);
                 return;
             }
 
@@ -114,6 +121,26 @@
 
         messageList.appendChild(li);
         scrollBottom();
+    }
+
+    // ===== エラーメッセージ表示 =====
+    function appendErrorMessage(message) {
+
+        const li = document.createElement("li");
+        li.className = "message-row system";
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble error";
+        bubble.textContent = "メッセージの送信に失敗しました。";
+
+        li.appendChild(bubble);
+        messageList.appendChild(li);
+        scrollBottom();
+
+        // 3秒後に自動削除
+        setTimeout(() => {
+            li.remove();
+        }, 3000);
     }
 
     // ===== 時刻表示 =====
